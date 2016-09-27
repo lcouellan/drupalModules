@@ -1,0 +1,4 @@
+name = Autocreate
+description = "Module de création d'utilisateurs"
+core = 7.x
+package = Own

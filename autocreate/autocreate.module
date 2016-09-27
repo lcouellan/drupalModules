@@ -1,0 +1,65 @@
+<?php
+/**
+ * @file
+ * Ce module crée des pages à partir du hook de création d'utilisateurs.
+ */
+/**
+ * Implements hook_user_insert().
+ */
+
+function autocreate_taxonomy_vocabulary_insert($vocabulary) {
+
+	/* Récupération et lecture du fichier XML */
+
+	$file = dirname(__FILE__) . '/node.xml';
+	$xml=simplexml_load_file($file) or die("Error: Cannot create object");
+	$mails = array();
+	$names = array();
+	/* Boucle sur toutes les utilisateurs du fichier XML */
+	foreach($xml->user as $user){
+		if (!in_array((string)$user->mail,$mails)){
+			array_push($mails,(string)$user->mail);
+			dpm($mails);
+			dpm($user->mail);
+
+			//This will generate a random password, you could set your own here
+			$password = user_password(8);
+  			//set up the user fields
+			$name = str_replace(' ','.',$user->name);
+			$name = preg_replace('/\s+/', '', $name);
+			$unwanted_array = array('Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
+				'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U',
+				'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'a', 'ç'=>'c',
+				'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
+				'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y');
+			$name = strtr( $name,$unwanted_array);
+			$name = strtolower($name);
+			if (!in_array((string)$name,$names)){
+				array_push($names,(string)$name);
+				$fields = array(
+					'name' => $name,
+					'mail' => $user->mail,
+					'pass' => $password,
+					'status' => 1,
+					'init' => 'email address',
+					'path' => $user->name,
+					'roles' => array(
+						DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+						),
+					);
+
+ 	 			//the first parameter is left blank so a new user is created
+				$account = user_save('', $fields);
+
+  				// If you want to send the welcome email, use the following code
+
+  				// Manually set the password so it appears in the e-mail.
+				$account->password = $fields['pass'];
+
+  				// Send the e-mail through the user module.
+				/*drupal_mail('user', 'register_admin_created',$user->mail, NULL, array('account' => $account), variable_get('site_mail',$user->mail));*/
+			}
+		}
+	}
+}
+?>

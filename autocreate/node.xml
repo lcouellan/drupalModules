@@ -1,0 +1,18 @@
+<users>
+	<user>
+		<name>
+			John Doe
+		</name>
+		<mail>
+			johndoe@doe.fr
+		</mail>
+	</user>
+	<user>
+		<name>
+			Don Joe
+		</name>
+		<mail>
+			don.joe@joe.fr
+		</mail>
+	</user>
+</users>

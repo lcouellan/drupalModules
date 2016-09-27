@@ -1,0 +1,131 @@
+<?php
+
+function cottardmotos_module_menu() {
+$items = array();
+$items['accueil'] = array(
+  'title' => 'Accueil',
+  'page callback' => 'cottardmotos_module_accueil',
+  'access callback' => TRUE,
+  'file' => 'cottardmotos_module.page.inc',
+);
+
+return $items;
+}
+
+function cottardmotos_module_theme() {
+  return array(
+    "page_accueil" => array(
+      "variables"=>array("element"=>null),
+      "template"=>"accueil"
+    ),
+  );
+}
+/*function cottard_selections() {
+  $content = (object) array();
+  $config = node_load(2302);
+  $content->fiches = array();
+  $ind = 1;
+ 
+  if(isset($config->field_vehicules["und"])) {
+    foreach($config->field_vehicules["und"] as $f) {   
+      $v = vehicule_load($f["target_id"]);
+      if(isset($v)&&!empty($v)) {
+                $fiche = (object) array();
+                $fiche->vid = $v->vid;
+                $fiche->titre = $v->titre;
+                $fiche->photo = image_style_url("liste_vehicule",$v->field_image_principale["und"][0]["uri"]);
+                $fiche->prix = $v->field_prix['und'][0]['value'];
+                $title= str_replace(' ','-', $fiche->titre);
+                $path = "occasions/".strtolower($title);
+                $fiche->lien = $path;
+                $content->fiches[] = $fiche;
+      }
+    }
+  }
+  $render = array(
+                                 "#theme"=>"nos-selections",
+                                 "#element"=>$content,
+                                 );
+  return $render;
+}*/
+
+function cottardmotos_module_block_info() {
+  $blocks = array();
+    $blocks['block_selections'] = array(
+            'info' => t('Bloc Selection'),
+            );
+  return $blocks;
+}
+
+function cottardmotos_module_block_view($delta = '') {
+  switch ($delta) {
+    case 'block_selections':
+      $block['subject'] = t('Bloc Selection');
+      $config = node_load(2302);
+      //dpm($config->field_vehicules['und'][0]['target_id']);
+      $fiches = array();
+      if(isset($config->field_vehicules["und"])) {
+        foreach($config->field_vehicules["und"] as $vehic) {   
+          $v = node_load($vehic['target_id']);
+          //dpm($v);
+          $fiche = (object) array();
+          $fiche->nid = $v->nid;
+          $fiche->titre = $v->title;
+          $fiche->photo = file_create_url($v->field_image_principale['und'][0]['uri']);
+          $fiche->prix = $v->field_prix['und'][0]['value'];
+          $fiche->lien = drupal_lookup_path("alias","node/".$fiche->nid);
+          $fiches[] = $fiche;
+        }
+      }
+      //dpm($fiches);
+      $block['content'] = '<p><img alt="" src="/sites/default/files/titre_selection.png" style="width: 296px; height: 18px;">';
+
+      foreach($fiches as $key => $fiche) {
+         $block['content'] .= '<a class="boite-selection" href="/'.$fiche->lien.'" title="'.$fiche->titre.'">';
+           $block['content'] .= '<img alt="" src="'.$fiche->photo.'" style="width: 145px; height: 108px">';
+           $block['content'] .= '<span class="titre-selec">'.$fiche->titre.'</span>';
+           $block['content'] .= '<span class="prix-selec">'.number_format($fiche->prix, 0, ".", " ").' €</span>';
+         $block['content'] .= '</a>';
+      }
+       $block['content'] .= '</p></section>';
+    break;
+  }
+  return $block;
+}
+function image_on_submit_form_alter(&$form, $form_state, $form_id) {
+    
+    switch ($form_id) {
+        
+        //change this to form_id of the form you want to alter
+        case 'webform-client-form-20' :
+            
+            //This replaces default submit on search form with image
+            $form ['submit'] ['#type'] = 'image_button';
+            $form ['submit'] ['#value'] = 'Search';
+            $form ['submit'] ['#src'] = 'sites/all/themes/bootstrap_cins/images/bt_envoyer.jpg';
+            break;
+    
+    }
+}
+function cottardmotos_form_alter(&$form, &$form_state, $form_id){
+  if(in_array($form['#theme'][0],array("views-exposed-form-motos-occasion-page","views_exposed_form__liste_des_vehicules__page_10"))) {
+    drupal_add_library('system','ui.slider');
+    $form['prix_1']['min']['#suffix'] = '<div id="slider-prix-min"></div>';
+    $form['prix_1']['max']['#suffix'] = '<div id="slider-prix-max"></div>';
+
+    $form['prix_1']['min']['#prefix'] = '<label class="min">Minimum :</label>';
+    $form['prix_1']['max']['#prefix'] = '<label class="max">Maximum :</label>';
+  }
+}
+function vehicule_load($pid = NULL, $reset = FALSE){
+  $pids = (isset ($pid) ? array($pid) : array());
+  $vehicule = vehicule_load_multiple($pids, $reset);
+  return $vehicule ? reset ($vehicule) : FALSE;
+}
+
+function vehicule_load_multiple($pids = array(), $conditions = array(), $reset = FALSE){
+  return entity_load('vehicule-occasion', $pids, $conditions, $reset);
+}
+
+
+?>
